@@ -1,0 +1,38 @@
+# Contributor: Alejandro Liu <alejandro_liu@hotmail.com>
+# Maintainer:
+#
+pkgname=ted
+pkgver=2002.1
+pkgrel=0
+pkgdesc="sanos text editor"
+url='http://www.jbox.dk/sanos/editor.htm'
+
+arch="all"
+license="MIT"
+depends=""
+depends_dev=""
+makedepends="$depends_dev"
+install=""
+subpackages=""
+source="http://www.jbox.dk/downloads/edit.c"
+
+
+
+prepare() {
+  cd "$srcdir"
+  wget -Oedit.c "$source"
+}
+
+build() {
+  cd "$srcdir"
+  gcc $CFLAGS -o ted edit.c
+}
+
+package() {
+  cd "$srcdir"
+  mkdir -p "$pkgdir"/usr/bin
+  install -m 755 ted "$pkgdir"/usr/bin
+}
+md5sums="ee928c738af288d1a6aaf3cba018ed42  edit.c"
+sha256sums="cc258c9673dc9538a988b968608f042b14a74fc296f53ffdd446cf6324dd8bb6  edit.c"
+sha512sums="db9d0823b7ce762f4b2debddc27731096931b09d714bf642a5eb3555228c6784f2faf6aec5108f5f4a4323719ddb0188016ab8a8bd1164d3423c20ace795962b  edit.c"

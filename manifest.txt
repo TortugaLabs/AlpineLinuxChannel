@@ -1,0 +1,6 @@
+testing/hplip
+# testing/sane
+testing/dos2unix
+# aiccu
+# text editor
+# Mini UPNP

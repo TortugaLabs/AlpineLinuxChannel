@@ -1,0 +1,5 @@
+testing
+*.apk
+*.rsa.pub
+*.rsa
+APKINDEX.tar.gz
