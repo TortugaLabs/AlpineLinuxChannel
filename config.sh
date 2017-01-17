@@ -34,7 +34,8 @@ export REPO_ROOT=$(readlink -f "$WORLD"/..)
 export \
   ARM_RELEASE=$release \
   ARM_MIRROR=http://nl.alpinelinux.org/alpine/ \
-  ARM_ARCH=x86_64
+  ARM_ARCH=x86_64 \
+  ARM_CACHE=$WORLD/cache
 
 # Note, we have the ARM_ARCH fixed to x86_64 because we only 
 # ever want to do 64 bit builds here.

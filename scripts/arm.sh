@@ -26,6 +26,8 @@
 #    URL of AlpineLinux mirror
 # *--scratch-dir=* _path_::
 #    Location of chroots.
+# *--cache-dir=* _path_::
+#    Location persistent cache.
 #
 # == COMMANDS
 #
@@ -57,6 +59,8 @@
 #      Will run as root.
 #    - --template|-t::
 #      Enter the clean chroot template
+#    - --cache|--no-cache::
+#      Bind the shared apk cache.  (If *no*, ignore shared apk cache).
 # *help|h*::
 #    Show help manual.
 # *upgrade|u* [--chroot=x] [--user]::
@@ -92,6 +96,7 @@
 # - ARM_CHROOTS:: chroots directory
 # - ARM_RELEASE:: Preferred Alpine Linux release
 # - ARM_ARCH:: Architecture
+# - ARM_CACHE:: Cache directory
 #  
 #--
 
@@ -304,6 +309,18 @@ create_chroot() {
     $root mknod -m $mode ${chroot}${node}
   done
 
+  local cdir="$(cache_dir)"
+  if [ -n "$cdir" ] ; then
+    [ ! -d "$cdir" ] && $root mkdir -p "$cdir"
+    $root mkdir -p "$chroot"/etc/apk "$chroot"/var/cache/apk
+    $root ln -s ../../var/cache/apk "$chroot"/etc/apk/cache
+    if $root mount -o bind "$cdir" "$chroot"/etc/apk/cache ; then
+      trap "$root umount $chroot/etc/apk/cache" EXIT
+    else
+      cdir=""
+    fi
+  fi
+
   $root "$apktool" \
     -X $mirror/$(release $release)/main \
     -U --allow-untrusted \
@@ -311,6 +328,10 @@ create_chroot() {
     --root "$chroot" \
     --initdb \
     add alpine-base alpine-sdk
+  if [ -n "$cdir" ] ; then
+    $root umount "$chroot"/etc/apk/cache
+    trap - EXIT
+  fi
 
   $root mkdir -p $chroot/etc/apk
   $root tee $chroot/etc/apk/repositories <<-EOF
@@ -348,6 +369,10 @@ enter_chroot() {
       ;;
     -b*)
       binds="$binds ${1#-b}"
+      ;;
+    -c|--cache)
+      [ -n "$cache" ] && 
+      binds="$binds $(cache_dir):var/cache/apk"
       ;;
     *)
       break;
@@ -575,8 +600,8 @@ tidy_build() {
   enter_chroot "$chroot" chown -R $cuser:$cuser /src
   if [ -n "$deps" ] ; then
     debug Injecting dependencies
-    enter_chroot "$chroot" apk update
-    enter_chroot "$chroot" apk add $deps
+    enter_chroot -c "$chroot" apk update
+    enter_chroot -c "$chroot" apk add $deps
   fi
 
   $root rm -rf "$chroot/output"
@@ -584,7 +609,7 @@ tidy_build() {
   $root chown $cuid:$cuid "$chroot/output"
   $root chmod 777 "$chroot/output"
   
-  enter_chroot "$chroot" sudo -u $cuser sh -c 'cd /src ; abuild -P /output'
+  enter_chroot -c "$chroot" sudo -u $cuser sh -c 'cd /src ; abuild -P /output'
 }
 
 chroot_arch() {
@@ -683,8 +708,8 @@ sysupd() {
   shift
 
   [ -f /etc/resolv.conf ] && $root cp -L /etc/resolv.conf ${chroot}/etc
-  enter_chroot "$chroot" apk update
-  enter_chroot "$chroot" apk upgrade
+  enter_chroot -c "$chroot" apk update
+  enter_chroot -c "$chroot" apk upgrade
 }
 
 depsort() {
@@ -749,6 +774,10 @@ template_chroot() {
 user_chroot() {
   echo "$scratch_dir"/chroot-"$release"-"$x_arch"-"$(id -u -n)"
 }
+cache_dir() {
+  [ -z "$cache" ] && return
+  echo "$cache/$release-$x_arch"
+}
 
 ##################################################################
 # Globals
@@ -757,6 +786,7 @@ user_chroot() {
 wget="wget -q"
 xpath=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 scratch_dir=/var/lib/arm_chroots
+cache=""
 
 if [ $(id -u) -eq 0 ] ; then
   root=""
@@ -777,6 +807,8 @@ else
 	#mirror=http://nl.alpinelinux.org/alpine/
 	# Default release
 	#release=x.y
+	# Default cache directory
+	#cache=/var/cache/apk
 	#
 	# You can usually leave these alone...
 	#
@@ -794,7 +826,9 @@ check_envs \
   ARM_MIRROR:mirror \
   ARM_CHROOTS:scratch_dir \
   ARM_RELEASE:release \
-  ARM_ARCH:x_arch
+  ARM_ARCH:x_arch \
+  ARM_CACHE:cache
+  
 
 ##################################################################
 # Command line overrides
@@ -814,6 +848,9 @@ do
     --arch=*)
       x_arch=${1#--arch=}
       ;;
+    --cache-dir=*)
+      cache=${1#--cache-dir=}
+      ;;
     *)
       break
       ;;
@@ -827,6 +864,10 @@ if [ -n "${scratch_dir:-}" ] ; then
   scratch_dir="$(readlink -f "$scratch_dir" |sed -e 's!/*$!!')"
 fi
 [ -n "${mirror:-}" ] && mirror="$(echo "$mirror" | sed -e 's!/*$!!')"
+if [ -n "${cache}" ] ; then
+  [ ! -d "$cache" ] && $root mkdir -p "$cache"
+  cache="$(readlink -f "$cache")"
+fi
 
 ##################################################################
 # User visible commands
@@ -949,6 +990,11 @@ op_enter() {
     usermode=true \
     init=false \
     binds=
+  if [ -n "$cache" ] ; then
+    local use_cache=-c
+  else
+    local use_cache=
+  fi
   
   while [ "$#" -gt 0 ] ; do
     case "$1" in
@@ -978,6 +1024,12 @@ op_enter() {
 	chroot=$(template_chroot)
 	usermode=false
 	;;
+      --cache)
+	local use_cache=-c
+	;;
+      --no-cache)
+	local use_cache=""
+	;;
       *)
 	break
 	;;
@@ -1002,9 +1054,9 @@ op_enter() {
   if $usermode ; then
     local cuser="$(query_apk "$chroot/.arm_cfg" cuser)"
     [ -z "$cuser" ] && die 118 "Unable to set-up user mode"
-    enter_chroot $binds "$chroot" sudo -u "$cuser" "$@"
+    enter_chroot $use_cache $binds "$chroot" sudo -u "$cuser" "$@"
   else
-    enter_chroot $binds "$chroot" "$@"
+    enter_chroot $use_cache $binds "$chroot" "$@"
   fi
 }
 

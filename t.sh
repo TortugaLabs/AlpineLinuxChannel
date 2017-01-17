@@ -1,5 +1,6 @@
 #!/bin/sh
 
+export WORLD=$(cd "$(dirname "$0")" && pwd)
 . $(cd $(dirname "$0") && pwd)/config.sh
 
 # sh scripts/arm.sh --release=3.4 c

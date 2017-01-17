@@ -3,3 +3,4 @@ testing
 *.rsa.pub
 *.rsa
 APKINDEX.tar.gz
+cache
