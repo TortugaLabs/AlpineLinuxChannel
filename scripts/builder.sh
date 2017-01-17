@@ -151,6 +151,7 @@ main() {
     if [ -n "$output" ] ; then
       for i in $output
       do
+        [ -f "$repo_dir/$i" ] && rm -f "$repo_dir/$i"
         cp -l$(debug v) "$build_dir/$i" "$repo_dir"
       done
       update_buildstats "$statsfile" "$pkg" "$pvr" $output
