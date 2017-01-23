@@ -1,0 +1,41 @@
+# Contributor: Alejandro Liu <alejandro_liu@hotmail.com>
+# Maintainer:
+#
+pkgname=heyu
+pkgver=2.11_rc2
+_pkgver=2.11-rc2
+pkgrel=0
+pkgdesc="X10 Automation"
+url="http://www.heyu.org/"
+
+arch="all"
+license="GPL"
+depends=""
+depends_dev=""
+makedepends="$depends_dev"
+install=""
+subpackages="$pkgname-doc"
+source="https://github.com/HeyuX10Automation/$pkgname/archive/v$_pkgver.tar.gz"
+
+builddir="$srcdir"/$pkgname-$_pkgver
+prepare() {
+	cd "$builddir"
+	default_prepare || return 1
+	echo '#!/bin/sh' > post-install.sh
+}
+
+
+build() {
+  cd "$builddir"
+  ./configure --localstatedir=/var --mandir=/usr/share/man --enable-postinst=./post-install.sh --sysconfdir=/etc --prefix=/usr
+  make || return 1
+}
+
+package() {
+  cd "$builddir"
+  make DESTDIR="$pkgdir"/ install
+
+}
+md5sums="97f5d0ed8be6bd2931dc796024b1c0bd  v2.11-rc2.tar.gz"
+sha256sums="694c8165cb38190bfc2881c255d8c382e56fa19820fa5a60c6172cb65cbe6240  v2.11-rc2.tar.gz"
+sha512sums="5cb916e342203367fdd2a4e5c2b259976eb614429ed30554865afdf6fb7349b872cec6450df47c465fb2589643cef2ff3f6c132643107bd449d2d8ba03194ee7  v2.11-rc2.tar.gz"

@@ -11,13 +11,13 @@ fi
 [ -z "$GIT_BRANCH" ] && die 11 "Unknown branch"
 
 case "$GIT_BRANCH" in
+  v3.4|v3.4-dev*)
+    export APORTS_BRANCH=3.4-stable
+    release=3.4
+    ;;
 #  *3.5*)
 #    export APORTS_BRANCH=3.5-stable
 #    release=3.5
-#    ;;
-#  *3.4*)
-#    export APORTS_BRANCH=3.4-stable
-#    release=3.4
 #    ;;
 #  edge)
 #    export APORTS_BRANCH=master

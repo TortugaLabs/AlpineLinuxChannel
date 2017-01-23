@@ -815,7 +815,7 @@ else
 	# Directory where to store all CHROOTS
 	#scratch_dir=/var/lib/arm_chroots
 	# Default arch (auto-detected)
-	#x_arch=$(basearch)
+	#x_arch=\$(basearch)
 	# Default path to set in the chroot environment
 	#xpath=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 	# wget command
@@ -1179,34 +1179,6 @@ op_build() {
     rv=$(expr $rv + 1)
   done
   return $rv
-}
-
-
-op_repo() {
-  op="$1" ; shift
-  [ $# -lt 1 ] && die 129 "Usage: $0 $op chroot [apks]"
-  local chroot="$(readlink -f "$1" )"
-  [ ! -d "$chroot" ] && die 121 "Missing $1 chroot"
-  shift
-  local chroot_arch="$(. $chroot/.arm_cfg && echo $x_arch)"
-  local apk repodir="$chroot/local/$chroot_arch"
-  [ ! -d "$repodir" ] && die 137 "Missing repo dir"
-
-  case "$op" in
-    l)
-      ls "$@" "$repodir"
-      ;;
-    i)
-      for apk in "$@"
-      do
-        $root cp -a$(debug v) "$apk" "$repodir"
-      done
-      ;;
-    p)
-      echo "$repodir"
-      ;;
-  esac
-  
 }
 
 ##################################################################

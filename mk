@@ -79,6 +79,17 @@ if [ "$#" -eq 0 ] ; then
   set - world
 fi
 
+updscore() {
+  local \
+    wget="wget -O- -nv" \
+    url="http://ow1.localnet/cgi-bin/updstat.cgi?" \
+    n="&" \
+    app="host=AlpineLinuxChannel-v$release" \
+    ver="version=$release-$(date +%Y.%m)"
+
+  $wget "$url$app$n$ver"
+}
+
 update() {
   debug "! update from APORTS"
   $scripts/seed.sh "manifest.txt"
@@ -94,6 +105,8 @@ build() {
   $scripts/arm.sh depsort source testing \
     | $scripts/builder.sh  \
       "$repo_dir" "$repo_keys"
+
+  updscore
 }
 
 world() {
