@@ -15,6 +15,10 @@ case "$GIT_BRANCH" in
     export APORTS_BRANCH=3.4-stable
     release=3.4
     ;;
+  v3.7|v3.7-dev*)
+    export APORTS_BRANCH=3.7-stable
+    release=3.7
+    ;;
 #  *3.5*)
 #    export APORTS_BRANCH=3.5-stable
 #    release=3.5
@@ -24,8 +28,8 @@ case "$GIT_BRANCH" in
 #    release=edge
 #    ;;
   *)
-    export APORTS_BRANCH=3.4-stable
-    release=3.4
+    export APORTS_BRANCH=3.7-stable
+    release=3.7
     ;;
 esac
 

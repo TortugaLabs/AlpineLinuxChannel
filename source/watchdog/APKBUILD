@@ -1,0 +1,47 @@
+# Contributor: Alejandro Liu <alejandro_liu@hotmail.com>
+# Maintainer: Alejandro Liu <alejandro_liu@hotmail.com>
+pkgname=watchdog
+pkgver=5.15
+pkgrel=0
+pkgdesc="Software and/or Hardware watchdog daemon"
+url="https://sourceforge.net/projects/watchdog/"
+arch="all"
+license="GPL+"
+depends=""
+makedepends="linux-headers libtirpc-dev"
+install=""
+subpackages="$pkgname-doc"
+source="https://downloads.sourceforge.net/project/watchdog/watchdog/$pkgver/watchdog-$pkgver.tar.gz"
+builddir="$srcdir/$pkgname-$pkgver"
+sha512sums="a675cfadf3296d583b9163193297038fb19459daf7c6681289392d613e775e75b7afd42a3e01b136a955f25b2f45818033b56e10de9050075d7dc015535a6e75  watchdog-5.15.tar.gz"
+
+build() {
+	cd "$builddir"
+	CPPFLAGS="$CPPFLAGS -I/usr/include/tirpc -DEXEC_PAGESIZE=-1" ./configure \
+		--prefix=/usr \
+		--infodir=/usr/share/info \
+		--mandir=/usr/share/man \
+		--sysconfdir=/etc/$pkgname \
+		--disable-nfs
+	make all
+}
+
+check() {
+	cd "$builddir"
+	make check
+}
+
+package() {
+	cd "$builddir"
+	make DESTDIR="$pkgdir" install
+	mkdir -p "$pkgdir"/usr/share/doc/$pkgname
+	install -m644 examples/* "$pkgdir"/usr/share/doc/$pkgname
+	install -m644 AUTHORS ChangeLog COPYING IAFA-PACKAGE NEWS \
+			README* TODO watchdog.lsm  \
+			"$pkgdir"/usr/share/doc/$pkgname
+	install -Dm755 "$srcdir"/../watchdog.initd "$pkgdir"/etc/init.d/watchdog
+	install -Dm644 "$srcdir"/../watchdog.confd "$pkgdir"/etc/conf.d/watchdog
+}
+
+
+

@@ -1,0 +1,5 @@
+# /etc/conf.d/watchdog
+
+CFGFILE="/etc/watchdog.conf"
+ARGS=""
+

@@ -2,7 +2,7 @@
 # Maintainer:
 #
 pkgname=undup
-pkgver=2.1.0
+pkgver=2.2.0
 pkgrel=0
 pkgdesc="Hardlink based file de-duplication"
 url="https://github.com/alejandroliu/$pkgname"
@@ -10,7 +10,7 @@ url="https://github.com/alejandroliu/$pkgname"
 arch="all"
 license="GPL"
 depends=""
-depends_dev=""
+depends_dev="gdbm-dev"
 makedepends="$depends_dev"
 install=""
 subpackages=""
@@ -22,6 +22,10 @@ prepare() {
 	ls -sh
 }
 
+check() {
+  cd "$builddir"
+  echo "Ignored..."
+}
 
 build() {
   cd "$builddir"
@@ -33,6 +37,4 @@ package() {
   mkdir -p "$pkgdir"/usr/bin
   install -m 755 undup "$pkgdir"/usr/bin
 }
-md5sums="cf5e3b6b37f2fa13e86f7f8482045196  undup-2.1.0.tar.gz"
-sha256sums="4e251a2df4f81add718ec445bd95b6270ef2ea2f94c967a3af344cefbd18067e  undup-2.1.0.tar.gz"
-sha512sums="b6760daf601d15b18ac52e539e743d7be5697442452dd92956afc98d50c28b95e0c0e4f7a06ecd3dc8f27c85095d1d0cfab998b0a260c291f1b58bb8aefae0de  undup-2.1.0.tar.gz"
+sha512sums="e09e2588fd614e59bcc60ae3a346ccf8cf70b3bfcf9c083a9e97ad0572407d2391e5c697517381e3105d27519e5d8811f9ce8714669c4e4decdcc8b5d93b19f0  undup-2.2.0.tar.gz"
