@@ -35,9 +35,7 @@ scripts
 Scripts:
 
 - [x] seed : Initialize source repository (NOT NEEDED)
-- [x] aurdl : Update sources using `cower`
 - [ ] builder : Build packages
-- [ ] repoupd : Update repo database
 - [x] rooter : manage `sudo` permissions
 
 

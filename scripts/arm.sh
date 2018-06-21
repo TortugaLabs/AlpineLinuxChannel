@@ -240,6 +240,11 @@ query_apk() {
     
     [ -n "${x_arch:-}" ] && local CARCH="${x_arch}"
     local subpackages= srcdir= var
+
+    for var in "$@"
+    do
+      eval "$var=''"
+    done
  
     . "$apk"
     if [ $# -eq 1 ] ; then

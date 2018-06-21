@@ -1,6 +1,5 @@
-# testing/hplip
-# testing/sane
+testing/hplip
+testing/sane
 community/dos2unix
-# aiccu
-# text editor
+testing/libieee1284
 # Mini UPNP
