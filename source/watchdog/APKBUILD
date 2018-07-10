@@ -13,7 +13,6 @@ install=""
 subpackages="$pkgname-doc"
 source="https://downloads.sourceforge.net/project/watchdog/watchdog/$pkgver/watchdog-$pkgver.tar.gz"
 builddir="$srcdir/$pkgname-$pkgver"
-sha512sums="a675cfadf3296d583b9163193297038fb19459daf7c6681289392d613e775e75b7afd42a3e01b136a955f25b2f45818033b56e10de9050075d7dc015535a6e75  watchdog-5.15.tar.gz"
 
 build() {
 	cd "$builddir"
@@ -43,5 +42,4 @@ package() {
 	install -Dm644 "$srcdir"/../watchdog.confd "$pkgdir"/etc/conf.d/watchdog
 }
 
-
-
+sha512sums="a675cfadf3296d583b9163193297038fb19459daf7c6681289392d613e775e75b7afd42a3e01b136a955f25b2f45818033b56e10de9050075d7dc015535a6e75  watchdog-5.15.tar.gz"

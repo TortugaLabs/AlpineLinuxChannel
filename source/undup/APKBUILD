@@ -2,7 +2,7 @@
 # Maintainer:
 #
 pkgname=undup
-pkgver=2.2.0
+pkgver=2.2.1
 pkgrel=0
 pkgdesc="Hardlink based file de-duplication"
 url="https://github.com/alejandroliu/$pkgname"
@@ -37,4 +37,7 @@ package() {
   mkdir -p "$pkgdir"/usr/bin
   install -m 755 undup "$pkgdir"/usr/bin
 }
-sha512sums="e09e2588fd614e59bcc60ae3a346ccf8cf70b3bfcf9c083a9e97ad0572407d2391e5c697517381e3105d27519e5d8811f9ce8714669c4e4decdcc8b5d93b19f0  undup-2.2.0.tar.gz"
+#
+# checksums
+#
+sha512sums="493aaece3aeb23299bfdfd37dcb8ee476d81c039775d53a75d3a091c01c34ff1bd1cca998a6e87cca0fb8f6fb21b28801484fee76202c9cb6fbb0901fc4cfbe0  undup-2.2.1.tar.gz"
