@@ -1,5 +1,7 @@
-testing/hplip
-testing/sane
+# Removing these  because alioth seems to be down!  So we can't build hplip
+#testing/libieee1284
+#testing/hplip
+#testing/sane
+
 community/dos2unix
-testing/libieee1284
 # Mini UPNP
