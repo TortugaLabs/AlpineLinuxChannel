@@ -19,6 +19,10 @@ case "$GIT_BRANCH" in
     export APORTS_BRANCH=3.7-stable
     release=3.7
     ;;
+  v3.8|v3.8-dev*)
+    export APORTS_BRANCH=3.8-stable
+    release=3.8
+    ;;
 #  *3.5*)
 #    export APORTS_BRANCH=3.5-stable
 #    release=3.5
