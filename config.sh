@@ -8,13 +8,13 @@ if [ -n "${TRAVIS_BRANCH:-}" ] ; then
 else
   GIT_BRANCH="$( cd "$WORLD" && git rev-parse --abbrev-ref HEAD)"
 fi
-[ -z "$GIT_BRANCH" ] && die 11 "Unknown branch"
 
-case "$GIT_BRANCH" in
-  v3.4|v3.4-dev*)
-    export APORTS_BRANCH=3.4-stable
-    release=3.4
-    ;;
+if [ -z "$vrelease" ] ; then
+  [ -z "$GIT_BRANCH" ] && die 11 "Unknown branch"
+  vrelease="$GIT_BRANCH"
+fi
+
+case "$vrelease" in
   v3.7|v3.7-dev*)
     export APORTS_BRANCH=3.7-stable
     release=3.7
@@ -32,8 +32,8 @@ case "$GIT_BRANCH" in
 #    release=edge
 #    ;;
   *)
-    export APORTS_BRANCH=3.7-stable
-    release=3.7
+    export APORTS_BRANCH=3.8-stable vrelease=v3.8
+    release=3.8
     ;;
 esac
 

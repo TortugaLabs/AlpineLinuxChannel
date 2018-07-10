@@ -48,20 +48,22 @@ usage() {
   exit
 }
 #### stop common stuff ####
-
 export WORLD=$(cd "$(dirname "$0")" && pwd)
 [ -z "$WORLD" ] && die 45 "ERROR: Unable to find the world"
-
-. "$WORLD/config.sh"
-
 [ -z "${IN_ROOTER:-}" ] && exec "$WORLD/scripts/rooter.sh" "$0" "$@"
 
-export scripts="$WORLD/scripts"
+export scripts="$WORLD/scripts" vrelease=""
 
 while [ "$#" -gt 0 ] ; do
   case "$1" in
     -d|--debug)
       export debug=true
+      ;;
+    --rel=*)
+      export vrelease="${1#--rel=}"
+      ;;
+    --release=*)
+      export vrelease="${1#--release=}"
       ;;
     *)
       break
@@ -69,6 +71,10 @@ while [ "$#" -gt 0 ] ; do
   esac
   shift
 done
+
+. "$WORLD/config.sh"
+
+
 
 if [ -n "${repo:=}" ] ; then
   repo=$(cd "$repo" && pwd) || exit 1
