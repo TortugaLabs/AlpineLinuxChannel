@@ -5,6 +5,7 @@
 # - mk world (default) : does everything
 # - mk update : Checks APORTS and updates any packages
 # - mk build : build packages
+# - mk cksum : recalculate source checksums
 #
 # options:
 # - -d : debug on
@@ -113,6 +114,11 @@ world() {
   update
   build
 }
+
+cksum() {
+  find source -name APKBUILD -print0 | xargs -0 $scripts/arm.sh cksum -w
+}
+
 
 for op in "$@"
 do

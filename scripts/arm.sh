@@ -82,6 +82,8 @@
 #    Inject the specified pkgs into a chroot's local repo.
 # *delete|d*  _[--chroot=x]_ _[--user]_::
 #    Delete all the pkgs in a chroot's local repo.
+# *cksum* [--ckop=type] APKBUILD ...::
+#    Calculate checksums for source files.
 #
 # == FILES
 #
@@ -551,6 +553,55 @@ init_chroot() {
 	EOF
 }
 
+
+inject_source() {
+  ## Import source into build chroot
+  ## # USAGE
+  ##   inject_source chroot cuser src
+  local chroot="$1" cuser="$2" src="$3" ; shift 3
+  [ ! -d "$src" ] && die 164 "Missing source $src"
+
+  debug Importing sources
+  $root cp -a "$src/." "$chroot/src"
+  local p \
+    patchdir="$(readlink -f "$src/../../patches")" \
+    patchname="$(basename "$(readlink -f "$src")")"
+
+  for p in "$patchdir/$patchname-$release.patch" "$patchdir/$patchname-$x_arch.patch" "$patchdir/$patchname.patch"
+  do
+    [ ! -f "$p" ] && continue
+    echo "Applying patch ($(basename "$p"))..."
+    $root patch -i "$p" -d "$chroot/src" -p1
+  done
+  
+  enter_chroot "$chroot" chown -R $cuser:$cuser /src
+}
+inject_deps() {
+  ## Inject dependancies into a chroot
+  ## # USAGE
+  ##   inject_deps chroot src
+  ## # ARGS
+  ## * chroot -- working chroot
+  ## * src -- path to source
+  local chroot="$1" src="$2"
+
+  local apkbuild="$src/APKBUILD"
+  [ ! -f "$apkbuild" ] && die 109 "MISSING $apkbuild"
+  apkbuild="$(readlink -f "$apkbuild")"
+
+  local deps="$((for d in $(query_apk $apkbuild makedepends) $(query_apk $apkbuild depends)
+  do
+    echo $d
+  done)|(sort -u))"
+
+  if [ -n "$deps" ] ; then
+    debug Injecting dependencies
+    enter_chroot -c "$chroot" apk update
+    enter_chroot -c "$chroot" apk add $deps
+  fi  
+}
+
+
 tidy_build() {
   ## Builds APK in a chroot
   ## # USAGE
@@ -560,8 +611,6 @@ tidy_build() {
   ## * cuser -- chroot user
   ## * cuid -- chroot uid
   ## * src -- path to source
-  local apkbuild="APKBUILD"
-  
   local \
     chroot="$1" \
     cuser="$2" \
@@ -575,39 +624,9 @@ tidy_build() {
   [ -z "$chroot_arch" ] && die 164 "Invalid chroot directory"
   local x_arch=$chroot_arch
 
-  [ ! -d "$outdir" ] && die 143 "Missing outdir: $outdir"
-  outdir="$(readlink -f "$outdir")"
+  inject_deps "$chroot" "$src"
+  inject_source "$chroot" "$cuser" "$src" 
   
-  cd "$src" || die 164 "Missing source $src"
-
-  local apkbuild=APKBUILD
-  [ ! -f "$apkbuild" ] && die 109 "MISSING $apkbuild"
-  apkbuild="$(readlink -f "$apkbuild")"
-
-  local deps="$((for d in $(query_apk $apkbuild makedepends) $(query_apk $apkbuild depends)
-  do
-    echo $d
-  done)|(sort -u))"
-
-  debug Importing sources
-  $root cp -a . "$chroot/src"
-  local p \
-    patchdir="$(readlink -f "../../patches")" \
-    patchname="$(basename "$(readlink -f .)")"
-
-  for p in "$patchdir/$patchname-$release.patch" "$patchdir/$patchname-$x_arch.patch" "$patchdir/$patchname.patch"
-  do
-    [ ! -f "$p" ] && continue
-    echo "Applying patch ($(basename "$p"))..."
-    $root patch -i "$p" -d "$chroot/src" -p1
-  done
-  
-  enter_chroot "$chroot" chown -R $cuser:$cuser /src
-  if [ -n "$deps" ] ; then
-    debug Injecting dependencies
-    enter_chroot -c "$chroot" apk update
-    enter_chroot -c "$chroot" apk add $deps
-  fi
 
   $root rm -rf "$chroot/output"
   $root mkdir -p "$chroot/output"
@@ -686,7 +705,7 @@ run_abuild() {
     init=true
   fi
   $init && init_chroot "$chroot" "$wdir" "$cuser" "$cuid"
-  tidy_build "$wdir" "$cuser" "$cuid" "$src"  || return 1
+  tidy_build "$wdir" "$cuser" "$cuid" "$src" || return 1
 
   local apks="$(find "$wdir/output" -name '*.apk')"
   if [ $(echo "$apks" | wc -l) -eq 0 ] ; then
@@ -705,6 +724,51 @@ run_abuild() {
     done
   done
   index_repo "$wdir"
+}
+
+run_cksum() {
+  ## Generate checksums
+  ## # USAGE
+  ##   run_cksum ckop APKBUILD
+  local ckop="$1" apkbuild="$2" write="$3"
+  
+  [ ! -f "$apkbuild" ] && die 38 "APKBUILD: $apkbuild not found"
+  local src=$(query_apk "$apkbuild" source) tdir=$(mktemp -d) k= i j
+  
+  for i in $src
+  do
+    j=$(basename "$i")
+    if ! wget -nv -O"$tdir/$j" "$i" ; then
+      rm -rf "$tdir"
+      return 1
+    fi
+    if [ -z "$k" ] ; then
+      k="$j"
+    else
+      k="$k $j"
+    fi
+  done
+  local result="${ckop}s=\"$(cd $tdir && $ckop $k)\""
+  rm -rf "$tdir"
+
+  if $write ; then
+    local itxt="$(sed 's/^/:/' "$apkbuild")"
+    local otxt="$(echo "$itxt" | awk '
+	BEGIN { o = 1 }
+	/^:'"$ckop"'s=/ { o=0 }
+        { if (o) print }
+	/\"$/ { o = 1}
+      '; echo "$result" | sed 's/^/:/')"
+    if [ x"$itxt" = x"$otxt" ] ; then
+      echo "No change!"
+    else
+      echo "Updating $apkbuild"
+      cp -a "$apkbuild" "${apkbuild}~"
+      echo "$otxt" | sed 's/^://' > "$apkbuild"
+    fi
+  else
+    echo "$result" 
+  fi
 }
 
 sysupd() {
@@ -1186,6 +1250,36 @@ op_build() {
   return $rv
 }
 
+op_cksum() {
+  local ckop="sha512sum" write=false
+  while [ "$#" -gt 0 ] ; do
+    case "$1" in
+      --ckop=*)
+	ckop=${1#--ckop=}
+	;;
+      -w|--write)
+	write=true
+	;;
+      *)
+	break
+	;;
+    esac
+    shift
+  done
+  
+  [ $# -eq 0 ] && set - APKBUILD
+
+  local src rv=0
+  
+  for src in "$@"
+  do
+    ( run_cksum $ckop "$src" $write ) && continue
+    rv=$(expr $rv + 1)
+  done
+  return $rv
+}
+
+
 ##################################################################
 # Main
 ##################################################################
@@ -1223,6 +1317,9 @@ case "$op" in
     ;;
   l|list|i|inject|d|delete)
     op_ccm "$op" "$@"
+    ;;
+  cksum)
+    op_cksum "$@"
     ;;
   *)
     die 228 "Invalid op $op. Use help"
