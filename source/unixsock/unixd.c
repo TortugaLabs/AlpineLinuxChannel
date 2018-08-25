@@ -12,7 +12,7 @@
 
 char *dftcmd[] = {
   "/bin/sh",
-  "-il",
+  "-l",
   NULL,
 };
 
@@ -29,6 +29,7 @@ int main(int argc,char *argv[]) {
   char *socket_path, **cmd;
   pid_t cpid;
 
+  //~ fprintf(stderr,"STARTING (%s,%d)\n",__FILE__,__LINE__);
   if (argc < 2) {
     fprintf(stderr, "Usage:\n\t%s socket-path [cmd args]\n", argv[0]);
     exit(2);
@@ -59,12 +60,14 @@ int main(int argc,char *argv[]) {
     exit(5);
   }
   signal(SIGCHLD,reaper);
+  //~ fprintf(stderr,"READY (%s,%d)\n",__FILE__,__LINE__);
 
   for (;;) {
     if ((cln = accept(srv,NULL,NULL)) == -1) {
       perror("accept");
       continue;
     }
+    //~ fprintf(stderr,"ACCEPT (%s,%d)\n",__FILE__,__LINE__);
     cpid = fork();
     switch (cpid) {
     case -1:
@@ -76,10 +79,12 @@ int main(int argc,char *argv[]) {
       dup2(cln,fileno(stdin));
       dup2(cln,fileno(stdout));
       dup2(cln,fileno(stderr));
+      //~ fprintf(stderr,"EXEC %s(%d) (%s,%d)\n",cmd[0],getpid(),__FILE__,__LINE__);
       execvp(cmd[0],cmd);
       perror("exec");
       exit(7);
     default:
+      //~ fprintf(stderr,"MAIN (%s,%d)\n",cmd[0],__FILE__,__LINE__);
       close(cln);
     }
   }

@@ -3,7 +3,7 @@
 #
 pkgname=unixsock
 pkgver=2018.07
-pkgrel=1
+pkgrel=4
 pkgdesc="UNIX Socket client/server"
 url='http://www.0ink.net/'
 arch="all"
@@ -23,6 +23,7 @@ build() {
   cd "$srcdir"
   gcc $CFLAGS -o unixd ../unixd.c
   gcc $CFLAGS -o unixc ../unixc.c
+  gcc $CFLAGS -o ttyc ../ttyc.c
 }
 
 package() {
@@ -30,4 +31,5 @@ package() {
   mkdir -p "$pkgdir"/usr/bin
   install -m 755 unixd "$pkgdir"/usr/bin
   install -m 755 unixc "$pkgdir"/usr/bin
+  install -m 755 ttyc "$pkgdir"/usr/bin
 }
